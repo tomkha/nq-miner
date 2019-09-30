@@ -1,0 +1,6 @@
+/build
+/dist
+/node_modules
+/peer-key
+/.vscode
+/miner.conf
