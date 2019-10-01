@@ -2,6 +2,7 @@ const os = require('os');
 const pjson = require('./package.json');
 const Nimiq = require('@nimiq/core');
 const Utils = require('./src/Utils');
+const SoloMiner = require('./src/SoloMiner');
 const NanoPoolMiner = require('./src/NanoPoolMiner');
 const DumbPoolMiner = require('./src/DumbPoolMiner');
 const Log = Nimiq.Log;
@@ -35,7 +36,8 @@ if (!config) {
 
     const setup = { // can add other miner types here
         'dumb': setupDumbPoolMiner,
-        'nano': setupNanoPoolMiner
+        'nano': setupNanoPoolMiner,
+        'solo': setupSoloMiner
     };
     const createMiner = setup[mode];
     if (!createMiner) {
@@ -58,6 +60,33 @@ if (!config) {
 function reportHashrates(hashrates) {
     const totalHashRate = hashrates.reduce((a, b) => a + b, 0);
     Log.i(TAG, `Hashrate: ${Utils.humanHashrate(totalHashRate)} | ${hashrates.map((hr, idx) => `GPU${idx}: ${Utils.humanHashrate(hr)}`).filter(hr => hr).join(' | ')}`);
+}
+
+async function setupSoloMiner(type, addr, config, deviceData, deviceOptions) {
+    Log.i(TAG, 'Setting up SoloMiner');
+
+    const network = config.network || 'main';
+    Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[network]);
+
+    const clientConfiguration = Nimiq.Client.Configuration.builder()
+        .feature(Nimiq.Client.Feature.MEMPOOL)
+        .feature(Nimiq.Client.Feature.MINING)
+        .build();
+    const client = new Nimiq.Client(clientConfiguration);
+
+    const address = Nimiq.Address.fromUserFriendlyAddress(addr);
+    const extraData = Nimiq.BufferUtils.fromAscii(deviceData.deviceName);
+
+    $.miner = new SoloMiner(type, address, extraData, client, deviceOptions);
+    $.miner.on('block-mined', block => {
+        Nimiq.Log.i(TAG, `Block mined: #${block.header.height}, hash=${block.header.hash().toHex()}`);
+    });
+    $.miner.on('hashrate-changed', reportHashrates);
+
+    Nimiq.Log.i(TAG, `Connecting to Nimiq ${Nimiq.GenesisConfig.NETWORK_NAME} network`);
+
+    await client.waitForConsensusEstablished();
+    Nimiq.Log.i(TAG, 'Consensus established');
 }
 
 async function setupNanoPoolMiner(type, addr, config, deviceData, deviceOptions) {
