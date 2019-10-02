@@ -7,6 +7,9 @@
       'src/native/cuda/kernels.cu',
       'src/native/cuda/miner.cc'
     ],
+    'include_dirs': [
+      '<!(node -e "require(\'nan\')")'
+    ],
     'rules': [{
       'extension': 'cu',
       'inputs': ['<(RULE_INPUT_PATH)'],
@@ -16,7 +19,7 @@
         ['OS=="win"', {
             'process_outputs_as_sources': 0,
             'action': [
-              'nvcc', '--std=c++11', '-c', '-O3',
+              'nvcc', '-c', '-O3',
               '--default-stream=per-thread',
               '--generate-code=arch=compute_35,code=sm_35',
               '--generate-code=arch=compute_35,code=compute_35',
@@ -42,62 +45,86 @@
           }
         ]]
     }],
-    'include_dirs': [
-      '<!(node -e "require(\'nan\')")',
-      '/usr/local/cuda/include'
-    ],
-    'libraries': [
-      '-lcuda', '-lcudart_static'
-    ],
-    'library_dirs': [
-      '/usr/local/cuda/lib64'
-    ],
-    'cflags_cc': ['-Wall', '-std=c++11', '-O3', '-fexceptions']
+    'conditions': [
+      ['OS=="win"', {
+        'variables': {
+          'CUDA_PATH': '<!(echo %CUDA_PATH%)'
+        },
+        'include_dirs': [
+          '<(CUDA_PATH)/include'
+        ],
+        'libraries': [
+          '-lcuda', '-lcudart_static',
+          '<(module_root_dir)/build/Release/obj/nimiq_miner_cuda/argon2d.o',
+          '<(module_root_dir)/build/Release/obj/nimiq_miner_cuda/blake2b.o',
+          '<(module_root_dir)/build/Release/obj/nimiq_miner_cuda/kernels.o'
+        ],
+        'library_dirs': [
+          '<(CUDA_PATH)/lib/x64'
+        ],
+        'defines': [
+          'VC_EXTRALEAN'
+        ],
+        'cflags_cc': ['-Wall', '-O3', '-fexceptions']
+      }],
+      ['OS=="linux"', {
+        'variables': {
+          'CUDA_PATH': '<!(echo $CUDA_PATH)'
+        },
+        'include_dirs': [
+          '<(CUDA_PATH)/include'
+        ],
+        'libraries': [
+          '-lcuda', '-lcudart_static'
+        ],
+        'library_dirs': [
+          '<(CUDA_PATH)/lib64'
+        ],
+        'cflags_cc': ['-Wall', '-std=c++11', '-O3', '-fexceptions']
+      }],
+    ]
   }, {
     'target_name': 'nimiq_miner_opencl',
     'sources': [
       'src/native/opencl/miner.cc'
     ],
     'include_dirs': [
-      '<!(node -e "require(\'nan\')")',
-      'src/native'
+      '<!(node -e "require(\'nan\')")'
     ],
     'conditions': [
-      ['OS in "linux freebsd openbsd"', {
-        'variables': {
-          'OPENCL_SDK': '<!(echo $AMDAPPSDKROOT)',
-          'OPENCL_SDK_INCLUDE': '<(OPENCL_SDK)/include',
-          'OPENCL_SDK_LIB': '<(OPENCL_SDK)/lib/x86_64'
-        },
-        'include_dirs': [
-          '<(OPENCL_SDK_INCLUDE)'
-        ],
-        'libraries': [
-          '-L<(OPENCL_SDK_LIB)',
-          '-lOpenCL'
-        ],
-        'cflags_cc': ['-Wall', '-O3', '-fexceptions']
-      }],
       ['OS=="win"', {
         'variables': {
-          'AMD_OPENCL_SDK': '<!(echo %AMDAPPSDKROOT%)',
-          'AMD_OPENCL_SDK_INCLUDE': '<(AMD_OPENCL_SDK)\\include',
-          'AMD_OPENCL_SDK_LIB': '<(AMD_OPENCL_SDK)\\lib\\x86_64'
+          'CUDA_PATH': '<!(echo %CUDA_PATH%)'
         },
         'include_dirs': [
-          '<(AMD_OPENCL_SDK_INCLUDE)',
-          '<!(echo %OPENCL_HEADER%)'
+          '<(CUDA_PATH)/include'
+        ],
+        'libraries': [
+          '-lOpenCL'
         ],
         'library_dirs': [
-          '<(AMD_OPENCL_SDK_LIB)'
+          '<(CUDA_PATH)/lib/x64'
         ],
         'defines': [
           'VC_EXTRALEAN'
         ],
+        'cflags_cc': ['-Wall', '-O3', '-fexceptions']
+      }],
+      ['OS=="linux"', {
+        'variables': {
+          'CUDA_PATH': '<!(echo $CUDA_PATH)'
+        },
+        'include_dirs': [
+          '<(CUDA_PATH)/include'
+        ],
         'libraries': [
-          'OpenCL.lib'
-        ]
-      }]
+          '-lOpenCL'
+        ],
+        'library_dirs': [
+          '<(CUDA_PATH)/lib64'
+        ],
+        'cflags_cc': ['-Wall', '-std=c++11', '-O3', '-fexceptions']
+      }],
     ]
   }]
 }
