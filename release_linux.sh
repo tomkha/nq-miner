@@ -21,7 +21,7 @@ rm -rf node_modules
 yarn
 rm -rf dist
 mkdir dist
-pkg -t node10-linux -o nq-miner index.js
+pkg -t node10-linux --options max_old_space_size=4096 -o nq-miner index.js
 mv nq-miner dist/nq-miner
 
 cp build/Release/nimiq_miner_cuda.node dist/

@@ -37,10 +37,10 @@ echo "Building ${OUTFILE}"
 
 rm -rf node_modules
 yarn
-npm link @nimiq/core
+yarn link @nimiq/core
 rm -rf dist
 mkdir dist
-pkg -t node10-windows -o nq-miner.exe index.js
+pkg -t node10-windows --options max_old_space_size=4096 -o nq-miner.exe index.js
 mv nq-miner.exe dist/nq-miner.exe
 
 cp build/Release/nimiq_miner_cuda.node dist/
