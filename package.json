@@ -16,11 +16,14 @@
     "rebuild": "node-gyp rebuild"
   },
   "dependencies": {
-    "@nimiq/core": "^1.5.0",
+    "@nimiq/core": "https://github.com/tomkha/nimiq-core#mat/nq-miner",
     "bindings": "^1.5.0",
     "nan": "^2.14.0"
   },
   "devDependencies": {
     "node-gyp": "^5.0.4"
+  },
+  "resolutions": {
+    "node-lmdb": "https://github.com/tomkha/node-lmdb#win_delay_load_hook"
   }
 }
