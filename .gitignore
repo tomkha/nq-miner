@@ -3,6 +3,5 @@
 /node_modules
 /peer-key
 /.vscode
-/miner.conf
 /main-light-consensus
 /test-light-consensus

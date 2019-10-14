@@ -1,6 +1,6 @@
 {
   "name": "nq-miner",
-  "version": "0.99.0",
+  "version": "0.99.1",
   "main": "index.js",
   "description": "Nimiq GPU miner",
   "repository": "github:tomkha/nq-miner",
@@ -18,7 +18,8 @@
   "dependencies": {
     "@nimiq/core": "https://github.com/tomkha/nimiq-core#mat/nq-miner",
     "bindings": "^1.5.0",
-    "nan": "^2.14.0"
+    "nan": "^2.14.0",
+    "yargs": "^14.2.0"
   },
   "devDependencies": {
     "node-gyp": "^5.0.4"

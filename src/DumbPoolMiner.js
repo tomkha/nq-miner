@@ -3,10 +3,6 @@ const crypto = require('crypto');
 const Nimiq = require('@nimiq/core');
 const Miner = require('./Miner');
 const WebSocket = require('ws');
-const Utils = require('./Utils');
-
-// TODO: Use GenesisConfig
-const GENESIS_HASH_MAINNET = 'Jkqvik+YKKdsVQY12geOtGYwahifzANxC+6fZJyGnRI=';
 
 class DumbPoolMiner extends Nimiq.Observable {
 
@@ -69,13 +65,13 @@ class DumbPoolMiner extends Nimiq.Observable {
         this._send({
             message: 'register',
             mode: 'dumb',
-            address: this._address,
+            address: this._address.toUserFriendlyAddress(),
             deviceId: this._deviceId,
             startDifficulty: this._deviceData.startDifficulty,
             deviceName: this._deviceData.deviceName,
             deviceData: this._deviceData,
             minerVersion: this._deviceData.minerVersion,
-            genesisHash: GENESIS_HASH_MAINNET
+            genesisHash: Nimiq.GenesisConfig.GENESIS_HASH.toBase64()
         });
     }
 

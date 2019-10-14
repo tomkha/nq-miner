@@ -26,7 +26,6 @@ cp build/Release/nimiq_miner_cuda.node dist/
 cp build/Release/nimiq_miner_opencl.node dist/
 cp node_modules/node-lmdb/build/Release/node-lmdb.node dist/
 cp node_modules/@nimiq/core/build/Release/nimiq_node.node dist/
-cp miner.sample.conf dist/miner.conf
 cp README.md dist/
 cp start_gpu.bat dist/
 
