@@ -3,8 +3,8 @@
 
 
 "@nimiq/core@https://github.com/tomkha/nimiq-core#mat/nq-miner":
-  version "1.5.1"
-  resolved "https://github.com/tomkha/nimiq-core#93576b8aa6490ad333dd3337690352e79264132c"
+  version "1.5.2"
+  resolved "https://github.com/tomkha/nimiq-core#2134d7eeaceba7249101b0fff1f0afb6cc1740bf"
   dependencies:
     "@nimiq/jungle-db" "^0.9.20"
     atob "^2.0.3"
@@ -41,12 +41,21 @@ abstract-leveldown@~0.12.1:
   dependencies:
     xtend "~3.0.0"
 
-abstract-leveldown@~6.1.0, abstract-leveldown@~6.1.1:
+abstract-leveldown@~6.1.1:
   version "6.1.1"
   resolved "https://registry.yarnpkg.com/abstract-leveldown/-/abstract-leveldown-6.1.1.tgz#f44bad5862d71c7b418110d7698ac25bedf24396"
   integrity sha512-7fK/KySVqzKIomdhkSWzX4YBQhzkzEMbWSiaB6mSN9e+ZdV3KEeKxia/8xQzCkATA5xnnukdP88cFR0D2FsFXw==
   dependencies:
     level-concat-iterator "~2.0.0"
+    xtend "~4.0.0"
+
+abstract-leveldown@~6.2.1:
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/abstract-leveldown/-/abstract-leveldown-6.2.1.tgz#37b655151e13c3d9b20fa3a04ce63ccaa345fce4"
+  integrity sha512-zUgomHedGBCThDkUtc1bfilu2jEhRZ7Dk3RePhtMma/akw7UK2Upm2R5Dd8ynRBEt3uscwbWO0VQNx22/7RtWg==
+  dependencies:
+    level-concat-iterator "~2.0.0"
+    level-supports "~1.0.0"
     xtend "~4.0.0"
 
 ajv@^6.5.5:
@@ -295,12 +304,12 @@ deferred-leveldown@~0.2.0:
   dependencies:
     abstract-leveldown "~0.12.1"
 
-deferred-leveldown@~5.2.1:
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/deferred-leveldown/-/deferred-leveldown-5.2.1.tgz#8da87909cd3269c2d6aff67b1e607f93e4d96c15"
-  integrity sha512-PwXZRn5EmW+IKYVAYVc7G9FsRkShr0myPubPuq+mtLhDq9xSUqfvTlNZKoeQGeXACHXkeCFurKrz5oo6TZ3qwg==
+deferred-leveldown@~5.3.0:
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/deferred-leveldown/-/deferred-leveldown-5.3.0.tgz#27a997ad95408b61161aa69bd489b86c71b78058"
+  integrity sha512-a59VOT+oDy7vtAbLRCZwWgxu2BaCfd5Hk7wxJd48ei7I+nsg8Orlb9CLG0PMZienk9BSUKgeAqkO2+Lw+1+Ukw==
   dependencies:
-    abstract-leveldown "~6.1.0"
+    abstract-leveldown "~6.2.1"
     inherits "^2.0.3"
 
 delayed-stream@~1.0.0:
@@ -516,7 +525,7 @@ inflight@^1.0.4:
     once "^1.3.0"
     wrappy "1"
 
-inherits@2, inherits@^2.0.1, inherits@^2.0.3, inherits@~2.0.1, inherits@~2.0.3:
+inherits@2, inherits@^2.0.3, inherits@^2.0.4, inherits@~2.0.1, inherits@~2.0.3:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
@@ -613,13 +622,13 @@ level-errors@~2.0.0:
     errno "~0.1.1"
 
 level-iterator-stream@~4.0.0:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/level-iterator-stream/-/level-iterator-stream-4.0.1.tgz#65c467070c0788fe0d08a0c1ed600c3b9e82bc8d"
-  integrity sha512-pSZWqXK6/yHQkZKCHrR59nKpU5iqorKM22C/BOHTb/cwNQ2EOZG+bovmFFGcOgaBoF3KxqJEI27YwewhJQTzsw==
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/level-iterator-stream/-/level-iterator-stream-4.0.2.tgz#7ceba69b713b0d7e22fcc0d1f128ccdc8a24f79c"
+  integrity sha512-ZSthfEqzGSOMWoUGhTXdX9jv26d32XJuHz/5YnuHZzH6wldfWMOVwI9TBtKcya4BKTyTt3XVA0A3cF3q5CY30Q==
   dependencies:
-    inherits "^2.0.1"
-    readable-stream "^3.0.2"
-    xtend "^4.0.0"
+    inherits "^2.0.4"
+    readable-stream "^3.4.0"
+    xtend "^4.0.2"
 
 level-post@^1.0.7:
   version "1.0.7"
@@ -643,27 +652,27 @@ level-sublevel@^6.6.5:
     xtend "~4.0.0"
 
 level-supports@~1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/level-supports/-/level-supports-1.0.0.tgz#376f3f2339c23be0ba2fe62b0fa0e3ac7d6d9988"
-  integrity sha512-01PKZumFhgysuHUbRz4c9DyA1egmcHJBAsZbm0Vf5agojC3uWOvAnhOD4swNUgHlfJBymXLi/xkBaEckeNRSvA==
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/level-supports/-/level-supports-1.0.1.tgz#2f530a596834c7301622521988e2c36bb77d122d"
+  integrity sha512-rXM7GYnW8gsl1vedTJIbzOrRv85c/2uCMpiiCzO2fndd06U/kUXEEU9evYn4zFggBOg36IsBW8LzqIpETwwQzg==
   dependencies:
     xtend "^4.0.2"
 
 leveldown@^5.1.1:
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/leveldown/-/leveldown-5.2.1.tgz#eadc2184ab4c83fe0d74853384fe99dc0a0de6be"
-  integrity sha512-369I1rGibXV7CIoLhsSpp/ExwQucI3xUe0RXQrMu4ji6OG9PFMVAQuzsEXKwAi3BWsjFzcFtodAP8MW5fmfung==
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/leveldown/-/leveldown-5.3.0.tgz#cc228088b184901d52b54bd70518543bfb059406"
+  integrity sha512-PQXwTKMz55rYlg7984VbM7xpcqdiWgVKRms2fEgqVL7spd6+wK8NewScJOYIGpIG7/XxMOc0i+q/NX0WLJEcwA==
   dependencies:
     abstract-leveldown "~6.1.1"
     napi-macros "~2.0.0"
     node-gyp-build "~4.1.0"
 
 levelup@^4.1.0:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/levelup/-/levelup-4.3.0.tgz#b6934483787e7558a340d54b4364ea3361150b73"
-  integrity sha512-6sC7hXr43Q3vDq/nB4UC4mU6sVxhFJZXYSfKJd5iDHgqQzJx6RIxRiFbXakQiNvdVRz6RO/HNmQqr1W06dne2w==
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/levelup/-/levelup-4.3.2.tgz#31c5b1b29f146d1d35d692e01a6da4d28fa55ebd"
+  integrity sha512-cRTjU4ktWo59wf13PHEiOayHC3n0dOh4i5+FHr4tv4MX9+l7mqETicNq3Aj07HKlLdk0z5muVoDL2RD+ovgiyA==
   dependencies:
-    deferred-leveldown "~5.2.1"
+    deferred-leveldown "~5.3.0"
     level-errors "~2.0.0"
     level-iterator-stream "~4.0.0"
     level-supports "~1.0.0"
@@ -816,14 +825,6 @@ node-gyp@^5.0.4:
     which "1"
 
 node-lmdb@0.7.0, "node-lmdb@https://github.com/tomkha/node-lmdb#win_delay_load_hook":
-  version "0.7.0"
-  resolved "https://github.com/tomkha/node-lmdb#7d07068f027151e5601ce8a2ee03354d504c464f"
-  dependencies:
-    bindings "^1.5.0"
-    nan "^2.13.1"
-    prebuild-install "^5.2.5"
-
-"node-lmdb@https://github.com/tomkha/node-lmdb#win_delay_load_hook":
   version "0.7.0"
   resolved "https://github.com/tomkha/node-lmdb#7d07068f027151e5601ce8a2ee03354d504c464f"
   dependencies:
@@ -1044,7 +1045,7 @@ readable-stream@^2.0.6:
     string_decoder "~1.1.1"
     util-deprecate "~1.0.1"
 
-readable-stream@^3.0.1, readable-stream@^3.0.2, readable-stream@^3.1.1:
+readable-stream@^3.0.1, readable-stream@^3.1.1, readable-stream@^3.4.0:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.4.0.tgz#a51c26754658e0a3c21dbf59163bd45ba6f447fc"
   integrity sha512-jItXPLmrSR8jmTRmRWJXCnGJsfy85mB3Wd/uINMXA65yrnFo0cPClFIUWzo2najVNSl+mx7/4W8ttlLWJe99pQ==
@@ -1403,7 +1404,7 @@ ws@^7.0.1:
   dependencies:
     async-limiter "^1.0.0"
 
-xtend@^4.0.0, xtend@^4.0.2, xtend@~4.0.0:
+xtend@^4.0.2, xtend@~4.0.0:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.2.tgz#bb72779f5fa465186b1f438f674fa347fdb5db54"
   integrity sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==
