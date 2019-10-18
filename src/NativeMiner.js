@@ -1,18 +1,18 @@
 const Nimiq = require('@nimiq/core');
 
-// TODO: configurable interval
-const HASHRATE_MOVING_AVERAGE = 6; // measurements
-const HASHRATE_REPORT_INTERVAL = 10; // seconds
+class NativeMiner extends Nimiq.Observable {
 
-class Miner extends Nimiq.Observable {
-
+    /**
+     * @param {string} type 
+     * @param {object} deviceOptions 
+     */
     constructor(type, deviceOptions) {
         super();
 
         const NativeMiner = require('bindings')(`nimiq_miner_${type}.node`);
-        this._miner = new NativeMiner.Miner();
-        this._devices = this._miner.getDevices();
-        this._devices.forEach((device, idx) => {
+        this._nativeMiner = new NativeMiner.Miner();
+        const devices = this._nativeMiner.getDevices();
+        devices.forEach((device, idx) => {
             const options = deviceOptions.forDevice(idx);
             if (!options.enabled) {
                 device.enabled = false;
@@ -32,15 +32,15 @@ class Miner extends Nimiq.Observable {
                 if (options.memoryTradeoff !== undefined) {
                     device.memoryTradeoff = options.memoryTradeoff;
                 }
-                Nimiq.Log.i(Miner, `GPU #${idx}: ${device.name}, ${device.multiProcessorCount} SM @ ${device.clockRate} MHz. (memory: ${device.memory == 0 ? 'auto' : device.memory}, threads: ${device.threads}, cache: ${device.cache}, mem.tradeoff: ${device.memoryTradeoff})`);
+                Nimiq.Log.i(`GPU #${idx}: ${device.name}, ${device.multiProcessorCount} SM @ ${device.clockRate} MHz. (memory: ${device.memory == 0 ? 'auto' : device.memory}, threads: ${device.threads}, cache: ${device.cache}, mem.tradeoff: ${device.memoryTradeoff})`);
             } else {
                 if (options.jobs !== undefined) {
                     device.jobs = options.jobs;
                 }
-                Nimiq.Log.i(Miner, `GPU #${idx}: ${device.name}, ${device.maxComputeUnits} CU @ ${device.maxClockFrequency} MHz. (memory: ${device.memory == 0 ? 'auto' : device.memory}, threads: ${device.threads}, cache: ${device.cache}, jobs: ${device.jobs})`);
+                Nimiq.Log.i(`GPU #${idx}: ${device.name}, ${device.maxComputeUnits} CU @ ${device.maxClockFrequency} MHz. (memory: ${device.memory == 0 ? 'auto' : device.memory}, threads: ${device.threads}, cache: ${device.cache}, jobs: ${device.jobs})`);
             }
         });
-        this._miner.initializeDevices();
+        this._nativeMiner.initializeDevices();
 
         this._hashes = [];
         this._lastHashRates = [];
@@ -49,10 +49,10 @@ class Miner extends Nimiq.Observable {
     _reportHashRate() {
         const averageHashRates = [];
         this._hashes.forEach((hashes, idx) => {
-            const hashRate = hashes / HASHRATE_REPORT_INTERVAL;
+            const hashRate = hashes / NativeMiner.HASHRATE_REPORT_INTERVAL;
             this._lastHashRates[idx] = this._lastHashRates[idx] || [];
             this._lastHashRates[idx].push(hashRate);
-            if (this._lastHashRates[idx].length > HASHRATE_MOVING_AVERAGE) {
+            if (this._lastHashRates[idx].length > NativeMiner.HASHRATE_MOVING_AVERAGE) {
                 this._lastHashRates[idx].shift();
                 averageHashRates[idx] = this._lastHashRates[idx].reduce((sum, val) => sum + val, 0) / this._lastHashRates[idx].length;
             } else if (this._lastHashRates[idx].length > 1) {
@@ -65,30 +65,37 @@ class Miner extends Nimiq.Observable {
         }
     }
 
+    /**
+     * 
+     * @param {number} shareCompact 
+     */
     setShareCompact(shareCompact) {
-        this._miner.setShareCompact(shareCompact);
+        this._nativeMiner.setShareCompact(shareCompact);
     }
 
-    startMiningOnBlock(blockHeader) {
+    /**
+     * 
+     * @param {Nimiq.BlockHeader} blockHeader 
+     * @param {Function} callback 
+     */
+    startMiningOnBlock(blockHeader, callback) {
         if (!this._hashRateTimer) {
-            this._hashRateTimer = setInterval(() => this._reportHashRate(), 1000 * HASHRATE_REPORT_INTERVAL);
+            this._hashRateTimer = setInterval(() => this._reportHashRate(), 1000 * NativeMiner.HASHRATE_REPORT_INTERVAL);
         }
-        this._miner.startMiningOnBlock(blockHeader, (error, obj) => {
+        this._nativeMiner.startMiningOnBlock(blockHeader.serialize(), (error, obj) => {
             if (error) {
                 throw error;
             }
             if (obj.done === true) {
                 return;
             }
-            if (obj.nonce > 0) {
-                this.fire('share', obj.nonce);
-            }
             this._hashes[obj.device] = (this._hashes[obj.device] || 0) + obj.noncesPerRun;
+            callback(obj);
         });
     }
 
     stop() {
-        this._miner.stop();
+        this._nativeMiner.stop();
         if (this._hashRateTimer) {
             this._hashes = [];
             this._lastHashRates = [];
@@ -98,4 +105,7 @@ class Miner extends Nimiq.Observable {
     }
 }
 
-module.exports = Miner;
+NativeMiner.HASHRATE_MOVING_AVERAGE = 6; // measurements
+NativeMiner.HASHRATE_REPORT_INTERVAL = 10; // seconds
+
+module.exports = NativeMiner;

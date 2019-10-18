@@ -1,6 +1,6 @@
 {
   "name": "nq-miner",
-  "version": "0.99.1",
+  "version": "0.99.2",
   "main": "index.js",
   "description": "Nimiq GPU miner",
   "repository": "github:tomkha/nq-miner",

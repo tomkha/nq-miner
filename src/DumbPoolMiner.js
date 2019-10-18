@@ -1,37 +1,26 @@
 const os = require('os');
 const crypto = require('crypto');
 const Nimiq = require('@nimiq/core');
-const Miner = require('./Miner');
 const WebSocket = require('ws');
 
 class DumbPoolMiner extends Nimiq.Observable {
 
-    constructor(type, address, deviceData, deviceOptions) {
+    /**
+     * @param {NativeMiner} nativeMiner
+     * @param {Nimiq.Address} address 
+     * @param {number} deviceId
+     * @param {object} deviceData 
+     */
+    constructor(nativeMiner, address, deviceId, deviceData) {
         super();
 
+        this._nativeMiner = nativeMiner;
         this._address = address;
-        this._deviceId = this._getDeviceId();
+        this._deviceId = deviceId;
         this._deviceData = deviceData;
-
-        this._miner = new Miner(type, deviceOptions);
-        this._miner.on('share', nonce => {
-            this._submitShare(nonce);
-        });
-        this._miner.on('hashrate-changed', hashrates => {
-            this.fire('hashrate-changed', hashrates);
-        });
-    }
-
-    _getDeviceId() {
-        const hostInfo = os.hostname() + '/' + Object.values(os.networkInterfaces()).map(i => i.map(a => a.address + '/' + a.mac).join('/')).join('/');
-        const hash = crypto.createHash('sha256');
-        hash.update(hostInfo);
-        return hash.digest().readUInt32LE(0);
     }
 
     connect(host, port) {
-        Nimiq.Log.i(DumbPoolMiner, `Connecting to ${host}:${port}`);
-        this._host = host;
         this._closed = false;
         this._ws = new WebSocket(`wss://${host}:${port}`);
 
@@ -40,19 +29,20 @@ class DumbPoolMiner extends Nimiq.Observable {
         });
 
         this._ws.on('close', (code, reason) => {
-            let timeout = Math.floor(Math.random() * 25) + 5;
-            Nimiq.Log.w(DumbPoolMiner, `Connection lost. Reconnecting in ${timeout} seconds to ${this._host}`);
             this._stopMining();
+
+            const timeout = Nimiq.BasePoolMiner.RECONNECT_TIMEOUT + Math.floor(Math.random() * (Nimiq.BasePoolMiner.RECONNECT_TIMEOUT_MAX - Nimiq.BasePoolMiner.RECONNECT_TIMEOUT));
+            Nimiq.Log.w(DumbPoolMiner, `Connection lost. Reconnecting in ${timeout} seconds to ${host}`);
             if (!this._closed) {
                 setTimeout(() => {
-                    this.connect(this._host, port);
+                    this.connect(host, port);
                 }, timeout * 1000);
             }
         });
 
         this._ws.on('message', (msg) => this._onMessage(JSON.parse(msg)));
 
-        this._ws.on('error', (e) => Nimiq.Log.e(DumbPoolMiner, `WS error - ${e.message}`, e));
+        this._ws.on('error', (e) => Nimiq.Log.e(DumbPoolMiner, `WS error:`, e.message || e));
     }
 
     disconnect() {
@@ -61,16 +51,15 @@ class DumbPoolMiner extends Nimiq.Observable {
     }
 
     _register() {
-        Nimiq.Log.i(DumbPoolMiner, `Registering to pool (${this._host}) using device id ${this._deviceId} (${this._deviceData.deviceName}) as a dumb client.`);
         this._send({
             message: 'register',
             mode: 'dumb',
             address: this._address.toUserFriendlyAddress(),
             deviceId: this._deviceId,
-            startDifficulty: this._deviceData.startDifficulty,
-            deviceName: this._deviceData.deviceName,
+            deviceName: this._deviceData ? this._deviceData.deviceName : undefined,
+            startDifficulty: this._deviceData ? this._deviceData.startDifficulty : undefined,
+            minerVersion: this._deviceData ? this._deviceData.minerVersion : undefined,
             deviceData: this._deviceData,
-            minerVersion: this._deviceData.minerVersion,
             genesisHash: Nimiq.GenesisConfig.GENESIS_HASH.toBase64()
         });
     }
@@ -96,55 +85,52 @@ class DumbPoolMiner extends Nimiq.Observable {
         }
     }
 
-    _startMining() {
-        Nimiq.Log.i(DumbPoolMiner, `Starting work on block #${this._currentBlockHeader.height}`);
-        this._miner.startMiningOnBlock(this._currentBlockHeader.serialize());
+    _startMining(blockHeader) {
+        Nimiq.Log.i(DumbPoolMiner, `Starting work on block #${blockHeader.height}`);
+        this._nativeMiner.startMiningOnBlock(blockHeader, obj => {
+            if (obj.nonce > 0) {
+                this._send({
+                    message: 'share',
+                    nonce: obj.nonce
+                });
+                this.fire('share', obj.nonce);
+            }
+        });
     }
 
     _stopMining() {
-        this._miner.stop();
-        delete this._currentBlockHeader;
+        this._nativeMiner.stop();
     }
 
     _onNewPoolSettings(address, extraData, shareCompact, nonce) {
         const difficulty = Nimiq.BlockUtils.compactToDifficulty(shareCompact);
         Nimiq.Log.i(DumbPoolMiner, `Set share difficulty: ${difficulty.toFixed(2)} (${shareCompact.toString(16)})`);
-        this._miner.setShareCompact(shareCompact);
+        this._nativeMiner.setShareCompact(shareCompact);
     }
 
     _onBalance(balance, confirmedBalance) {
-        Nimiq.Log.i(DumbPoolMiner, `Balance: ${Nimiq.Policy.lunasToCoins(balance)} NIM, confirmed balance: ${Nimiq.Policy.lunasToCoins(confirmedBalance)} NIM`);
+        Nimiq.Log.i(DumbPoolMiner, `Pool balance: ${Nimiq.Policy.lunasToCoins(balance)} NIM (confirmed ${Nimiq.Policy.lunasToCoins(confirmedBalance)} NIM)`);
     }
 
     _onNewBlock(blockHeader) {
-        // Workaround duplicated blocks
-        if (this._currentBlockHeader != undefined && this._currentBlockHeader.equals(blockHeader)) {
-            Nimiq.Log.w(DumbPoolMiner, 'The same block appears once again!');
-            return;
-        }
-
-        this._currentBlockHeader = blockHeader;
-        this._startMining();
-    }
-
-    _submitShare(nonce) {
-        this._send({
-            message: 'share',
-            nonce
-        });
-        this.fire('share', nonce);
+        this._startMining(blockHeader);
     }
 
     _send(msg) {
-        try {
-            this._ws.send(JSON.stringify(msg));
-        } catch (e) {
-            const readyState = this._ws.readyState;
-            Nimiq.Log.e(DumbPoolMiner, `WS error - ${e.message}`);
-            if (readyState === WebSocket.CLOSED) {
-                this._ws.close();
+        if (this._ws) {
+            try {
+                this._ws.send(JSON.stringify(msg));
+            } catch (e) {
+                Nimiq.Log.w(DumbPoolMiner, 'Error sending:', e.message || e);
             }
         }
+    }
+
+    static generateDeviceId() {
+        const hostInfo = os.hostname() + '/' + Object.values(os.networkInterfaces()).map(i => i.map(a => a.address + '/' + a.mac).join('/')).join('/');
+        const hash = crypto.createHash('sha256');
+        hash.update(hostInfo);
+        return hash.digest().readUInt32LE(0);
     }
 }
 
