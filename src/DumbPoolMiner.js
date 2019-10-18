@@ -24,19 +24,30 @@ class DumbPoolMiner extends Nimiq.Observable {
         this._closed = false;
         this._ws = new WebSocket(`wss://${host}:${port}`);
 
+        const hearbeat = () => {
+            clearTimeout(this._pingTimeout);
+            this._pingTimeout = setTimeout(() => {
+                this._ws.terminate();
+            }, DumbPoolMiner.PING_TIMEOUT);
+        };
+
         this._ws.on('open', () => {
+            hearbeat();
             this._register();
         });
 
+        this._ws.on('ping', hearbeat);
+
         this._ws.on('close', (code, reason) => {
             this._stopMining();
+            clearTimeout(this._pingTimeout);
 
             const timeout = Nimiq.BasePoolMiner.RECONNECT_TIMEOUT + Math.floor(Math.random() * (Nimiq.BasePoolMiner.RECONNECT_TIMEOUT_MAX - Nimiq.BasePoolMiner.RECONNECT_TIMEOUT));
-            Nimiq.Log.w(DumbPoolMiner, `Connection lost. Reconnecting in ${timeout} seconds to ${host}`);
+            Nimiq.Log.w(DumbPoolMiner, `Connection lost. Reconnecting in ${Math.round(timeout / 1000)} seconds to ${host}`);
             if (!this._closed) {
                 setTimeout(() => {
                     this.connect(host, port);
-                }, timeout * 1000);
+                }, timeout);
             }
         });
 
@@ -133,5 +144,7 @@ class DumbPoolMiner extends Nimiq.Observable {
         return hash.digest().readUInt32LE(0);
     }
 }
+
+DumbPoolMiner.PING_TIMEOUT = 30000;
 
 module.exports = DumbPoolMiner;
