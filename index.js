@@ -149,7 +149,7 @@ const argv = require('yargs')
     .demandOption(['type', 'address'])
     .alias('v', 'version')
     .alias('h', 'help')
-    .example('$0 -m cuda -a \'NQ02 YP68 BA76 0KR3 QY9C SF0K LP8Q THB6 LTKU\' -p eu.nimpool.io:8444')
+    .example('$0 -t cuda -a \'NQ02 YP68 BA76 0KR3 QY9C SF0K LP8Q THB6 LTKU\' -p eu.nimpool.io:8444')
     .epilogue('For more information check https://github.com/tomkha/nq-miner')
     .check(argv => {
         if (['smart', 'nano', 'dumb'].includes(argv.mode) && !argv.pool) {
