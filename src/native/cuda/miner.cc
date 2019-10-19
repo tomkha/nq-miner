@@ -580,7 +580,7 @@ void Device::MineNonces(uint32_t workId, uint32_t threadIndex, nimiq_block_heade
     if (result != cudaSuccess)
     {
       const char *errorMsg = cudaGetErrorString(result);
-      std::cerr << errorMsg << "\n";
+      std::cerr << "GPU #" << deviceIndex << " failed: " << errorMsg << "\n";
       std::exit(result);
     }
 
