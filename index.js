@@ -12,6 +12,20 @@ const $ = {};
 
 const useFirst = arg => Array.isArray(arg) ? arg[0] : arg;
 
+const parseCSV = arg => arg.reduce((a, v) => {
+    switch (typeof v) {
+        case 'number':
+            a.push(v);
+            break;
+        case 'string':
+            a.push(...v.split(',').filter(Boolean).map(x => parseInt(x.trim())));
+            break;
+        default:
+            break;
+    }
+    return a;
+}, []);
+
 const argv = require('yargs')
     .detectLocale(false)
     .strict(true)
@@ -67,6 +81,7 @@ const argv = require('yargs')
     .option('d', {
         alias: 'devices',
         description: 'List of GPU to use',
+        coerce: parseCSV,
         defaultDescription: 'all',
         type: 'array'
     })
@@ -114,26 +129,31 @@ const argv = require('yargs')
     })
     .option('memory', {
         description: 'Memory to allocate in Mb per thread/GPU',
+        coerce: parseCSV,
         defaultDescription: 'auto',
         type: 'array'
     })
     .option('threads', {
         description: 'Threads per GPU',
+        coerce: parseCSV,
         default: 2,
         type: 'array'
     })
     .option('cache', {
         description: 'Number of cached Argon2 blocks',
+        coerce: parseCSV,
         default: 4,
         type: 'array'
     })
     .option('memory-tradeoff', {
         description: 'Number of computed Argon2 blocks (CUDA)',
+        coerce: parseCSV,
         default: 256,
         type: 'array'
     })
     .option('jobs', {
         description: 'Number of simultaneous jobs to run (OpenCL)',
+        coerce: parseCSV,
         default: 8,
         type: 'array'
     })
