@@ -494,34 +494,36 @@ void Device::Initialize()
     return;
   }
 
-  if (memory == 0)
+  cudaSetDevice(deviceIndex);
+  cudaDeviceReset();
+  cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync); // cudaDeviceScheduleAuto
+
+  size_t memSize = (size_t)memory * ONE_MB;
+
+  if (memSize == 0)
   {
-    // whole number of GB minus one
-    memory = (prop.totalGlobalMem / ONE_GB) * (ONE_GB / ONE_MB);
-    memory /= threads;
+    size_t freeMemory, totalMemory;
+    cudaMemGetInfo(&freeMemory, &totalMemory);
+    memSize = freeMemory / threads;
   }
 
-  uint32_t nonces_per_run = ((size_t)memory * ONE_MB) / (sizeof(block_g) * NIMIQ_ARGON2_COST);
-  nonces_per_run = (nonces_per_run / BLAKE2B_THREADS_PER_BLOCK) * BLAKE2B_THREADS_PER_BLOCK;
-  size_t mem_size = sizeof(block_g) * NIMIQ_ARGON2_COST * nonces_per_run;
+  uint32_t noncesPerRun = memSize / (sizeof(block_g) * NIMIQ_ARGON2_COST);
+  noncesPerRun = (noncesPerRun / BLAKE2B_THREADS_PER_BLOCK) * BLAKE2B_THREADS_PER_BLOCK;
+  memSize = sizeof(block_g) * NIMIQ_ARGON2_COST * noncesPerRun;
 
-  worker.nonces_per_run = nonces_per_run;
+  worker.nonces_per_run = noncesPerRun;
 
-  worker.init_memory_blocks = dim3(nonces_per_run / BLAKE2B_THREADS_PER_BLOCK);
+  worker.init_memory_blocks = dim3(noncesPerRun / BLAKE2B_THREADS_PER_BLOCK);
   worker.init_memory_threads = dim3(BLAKE2B_THREADS_PER_BLOCK, 2);
 
-  worker.argon2_blocks = dim3(1, nonces_per_run);
+  worker.argon2_blocks = dim3(1, noncesPerRun);
   worker.argon2_threads = dim3(THREADS_PER_LANE, 1);
 
-  worker.get_nonce_blocks = dim3(nonces_per_run / BLAKE2B_THREADS_PER_BLOCK);
+  worker.get_nonce_blocks = dim3(noncesPerRun / BLAKE2B_THREADS_PER_BLOCK);
   worker.get_nonce_threads = dim3(BLAKE2B_THREADS_PER_BLOCK);
 
   worker.cacheSize = cache;
   worker.memoryTradeoff = memoryTradeoff;
-
-  cudaSetDevice(deviceIndex);
-  cudaDeviceReset();
-  cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync); // cudaDeviceScheduleAuto
 
   mutexes = new std::mutex *[threads];
   worker.memory = new block_g *[threads];
@@ -532,7 +534,7 @@ void Device::Initialize()
   {
     mutexes[threadIndex] = new std::mutex();
 
-    cudaError_t result = cudaMalloc(&worker.memory[threadIndex], mem_size);
+    cudaError_t result = cudaMalloc(&worker.memory[threadIndex], memSize);
     if (result != cudaSuccess)
     {
       return Nan::ThrowError(Nan::New("Could not allocate memory.").ToLocalChecked());
