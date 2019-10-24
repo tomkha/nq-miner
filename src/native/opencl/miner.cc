@@ -19,6 +19,16 @@
 #define VENDOR_AMD "Advanced Micro Devices"
 #define VENDOR_NVIDIA "NVIDIA Corporation"
 
+// Return the SKU board name for the device
+#ifndef CL_DEVICE_BOARD_NAME_AMD
+#define CL_DEVICE_BOARD_NAME_AMD 0x4038
+#endif
+
+// Return the global free memory in KBytes for the device:
+#ifndef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
+#define CL_DEVICE_GLOBAL_FREE_MEMORY_AMD 0x4039
+#endif
+
 const cl_uint zero = 0;
 
 typedef Nan::AsyncBareProgressQueueWorker<uint32_t>::ExecutionProgress MinerProgress;
@@ -419,6 +429,17 @@ NAN_GETTER(Device::HandleGetters)
   std::string propertyName = std::string(*Nan::Utf8String(property));
   if (propertyName == "name")
   {
+    if (device->isAMD)
+    {
+      char boardName[255];
+      cl_uint ret = clGetDeviceInfo(device->device(), CL_DEVICE_BOARD_NAME_AMD, sizeof(boardName), boardName, NULL);
+      if (ret == CL_SUCCESS)
+      {
+        info.GetReturnValue().Set(Nan::New(boardName).ToLocalChecked());
+        return;
+      }
+    }
+
     std::string deviceName = device->device.getInfo<CL_DEVICE_NAME>(); // Includes null-terminator
     info.GetReturnValue().Set(Nan::New(deviceName.c_str()).ToLocalChecked());
   }
@@ -549,25 +570,41 @@ void Device::Initialize()
   // Autoconfig memory size
   if (memSize == 0)
   {
-    cl_ulong globalMemSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-
-    memSize = (globalMemSize / ONE_GB - 1) * ONE_GB / threads;
     if (isAMD)
     {
+      cl_ulong freeMemory = 0;
+#ifndef _WIN32
+      cl_uint ret = clGetDeviceInfo(device(), CL_DEVICE_GLOBAL_FREE_MEMORY_AMD, sizeof(freeMemory), &freeMemory, NULL);
+      freeMemory = (ret == CL_SUCCESS) ? freeMemory * ONE_KB : 0;
+#endif
+      if (freeMemory == 0)
+      {
+        cl_ulong globalMemSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+        freeMemory = 0.8 * globalMemSize; // 80% of total
+      }
+      memSize = freeMemory / threads;
+
       cl_ulong maxMemAllocSize = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
       if (memSize > maxMemAllocSize)
       {
-        memSize = (maxMemAllocSize / ONE_GB) * ONE_GB;
+        memSize = maxMemAllocSize;
       }
     }
+    else
+    {
+      cl_ulong globalMemSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+      cl_ulong freeMemory = globalMemSize - ONE_GB; // total - 1G can't work with less than 1Gb
+      memSize = freeMemory / threads;
+    }
   }
+
+  size_t memBlockSize = (isAMD ? 64 : 128) * ONE_MB;
+  memSize = (memSize / memBlockSize) * memBlockSize;
 
   uint32_t noncesPerRun = memSize / (ARGON2_BLOCK_SIZE * NIMIQ_ARGON2_COST);
 
   cl_uint jobsPerBlock = (isAMD ? jobs : 1);
   size_t shmemSize = cache * jobsPerBlock * ARGON2_BLOCK_SIZE;
-
-  // printf("Mem size: %lu, nonces per run: %u, jobs: %u, cache: %u, shared mem size: %lu\n", memSize, noncesPerRun, jobsPerBlock, cache, shmemSize);
 
   context = cl::Context(device);
 

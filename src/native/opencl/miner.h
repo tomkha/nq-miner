@@ -5,6 +5,7 @@
 
 #define ONE_GB (1 << 30)
 #define ONE_MB (1 << 20)
+#define ONE_KB (1 << 10)
 
 #define ARGON2_BLOCK_SIZE 1024
 #define ARGON2_HASH_LENGTH 32
