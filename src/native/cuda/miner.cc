@@ -221,17 +221,22 @@ NAN_METHOD(Miner::InitializeDevices)
     return Nan::ThrowError(Nan::New("Devices already initialized.").ToLocalChecked());
   }
 
-  for (auto device : miner->devices)
+  try
   {
-    if (device->IsEnabled())
+    for (auto device : miner->devices)
     {
-      device->Initialize();
+      if (device->IsEnabled())
+      {
+        device->Initialize();
+      }
     }
+
+    miner->devicesInitialized = true;
   }
-
-  // TODO: Check Nan::ThrowError
-
-  miner->devicesInitialized = true;
+  catch (std::exception &e)
+  {
+    return Nan::ThrowError(Nan::New(e.what()).ToLocalChecked());
+  }
 }
 
 NAN_METHOD(Miner::SetShareCompact)
@@ -537,19 +542,19 @@ void Device::Initialize()
     cudaError_t result = cudaMalloc(&worker.memory[threadIndex], memSize);
     if (result != cudaSuccess)
     {
-      return Nan::ThrowError(Nan::New("Could not allocate memory.").ToLocalChecked());
+      throw std::runtime_error("Could not allocate memory.");
     }
 
     result = cudaMalloc(&worker.inseed[threadIndex], sizeof(initial_seed));
     if (result != cudaSuccess)
     {
-      return Nan::ThrowError(Nan::New("Could not allocate memory.").ToLocalChecked());
+      throw std::runtime_error("Could not allocate memory.");
     }
 
     result = cudaMalloc(&worker.nonce[threadIndex], sizeof(uint32_t));
     if (result != cudaSuccess)
     {
-      return Nan::ThrowError(Nan::New("Could not allocate memory.").ToLocalChecked());
+      throw std::runtime_error("Could not allocate memory.");
     }
   }
 
