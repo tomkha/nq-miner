@@ -19,7 +19,7 @@
 -m, --mode         Mining mode                                                              [string]
                    Defines what consensus type to establish and what pool protocol to use
                    Possible values: "solo", "smart", "nano", "dumb"
-                   Default: "nano"
+                   Default: "dumb"
 
 -d, --devices      List of GPU devices to use                                                [array]
                    Example: 0 1 2

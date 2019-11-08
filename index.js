@@ -74,7 +74,7 @@ const argv = require('yargs')
         description: 'Mining mode',
         choices: ['solo', 'smart', 'nano', 'dumb'],
         coerce: useFirst,
-        default: 'nano',
+        default: 'dumb',
         requiresArg: true,
         type: 'string'
     })
