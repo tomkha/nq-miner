@@ -157,6 +157,18 @@ const argv = require('yargs')
         default: 8,
         type: 'array'
     })
+    .option('cpu-priority', {
+        description: 'Process priority (0 - idle, 5 - highest)',
+        coerce: arg => {
+            const value = useFirst(arg);
+            if (!Number.isInteger(value)) {
+                return undefined;
+            }
+            return Math.min(Math.max(value, 0), 5);
+        },
+        requiresArg: true,
+        type: 'number'
+    })
     .option('c', {
         alias: 'config',
         description: 'Path to JSON config file',
@@ -182,7 +194,7 @@ const argv = require('yargs')
 Nimiq.Log.instance.level = argv.log;
 
 (async () => {
-    const { type, address, pool, mode, network, volatile, hashrate, difficulty } = argv;
+    const { type, address, pool, mode, network, volatile, hashrate, difficulty, cpuPriority } = argv;
     const deviceName = argv.name || os.hostname();
     const extraData = argv.extraData ? `${argv.extraData} / ${deviceName}` : deviceName;
     const minerVersion = `NQ Miner ${pjson.version} ${type === 'cuda' ? 'CUDA' : 'OpenCL'}`;
@@ -196,6 +208,16 @@ Nimiq.Log.instance.level = argv.log;
     const deviceOptions = Utils.getDeviceOptions(argv);
 
     Nimiq.Log.i(TAG, `${minerVersion} starting`);
+
+    if (cpuPriority !== undefined) {
+        try {
+            const priority = Object.entries(os.constants.priority)[cpuPriority];
+            os.setPriority(priority[1]);
+            Nimiq.Log.d(TAG, `Set process priority: ${priority[1]} (${priority[0]})`);
+        } catch (e) {
+            Nimiq.Log.e(TAG, `Couldn't set process priority: ${e.message || e}`);
+        }
+    }
 
     $.nativeMiner = new NativeMiner(type, deviceOptions);
     $.nativeMiner.on('hashrate-changed', (hashrates) => {

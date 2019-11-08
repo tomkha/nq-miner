@@ -66,6 +66,9 @@
                    Example: 8 8 4 4
                    Default: 8
 
+--cpu-priority     Process priority (0 - 5, 0 - idle, 2 - normal, 5 - highest)              [number]
+                   Example: 5
+
 -v, --version      Show version number                                                     [boolean]
 
 -h, --help         Show help                                                               [boolean]
