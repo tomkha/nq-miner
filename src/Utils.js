@@ -1,14 +1,14 @@
 
 exports.humanHashrate = function (hashes) {
-    let thresh = 1000;
-    let units = ['H/s', 'kH/s', 'MH/s', 'GH/s', 'TH/s', 'PH/s', 'EH/s', 'ZH/s', 'YH/s'];
+    const thresh = 1000;
+    const units = ['H/s', 'kH/s', 'MH/s', 'GH/s', 'TH/s', 'PH/s', 'EH/s', 'ZH/s', 'YH/s'];
     let u = 0;
     while (Math.abs(hashes) >= thresh && u < units.length - 1) {
         hashes /= thresh;
         ++u;
     }
-    return hashes.toFixed(hashes >= 100 ? 0 : hashes >= 10 ? 1 : 2) + ' ' + units[u];
-}
+    return `${hashes.toFixed(hashes >= 100 ? 0 : hashes >= 10 ? 1 : 2)} ${units[u]}`;
+};
 
 exports.getDeviceOptions = function (argv) {
     const devices = Array.isArray(argv.devices) ? argv.devices : [];
@@ -45,5 +45,5 @@ exports.getDeviceOptions = function (argv) {
                 jobs: getOption(jobs, deviceIndex)
             };
         }
-    }
-}
+    };
+};

@@ -289,7 +289,7 @@ Nimiq.Log.instance.level = argv.log;
             $.miner = new Nimiq.SmartPoolMiner($.nativeMiner, $.blockchain, $.accounts, $.mempool, $.network.time, address, deviceId, deviceData, Nimiq.BufferUtils.fromAscii(extraData));
         }
 
-        $.miner.on('share', (block, blockValid) => {
+        $.miner.on('share', (block) => {
             Nimiq.Log.i(TAG, `Found share. Nonce: ${block.header.nonce}`);
         });
 

@@ -53,7 +53,7 @@ class DumbPoolMiner extends Nimiq.Observable {
 
         this._ws.on('message', (msg) => this._onMessage(JSON.parse(msg)));
 
-        this._ws.on('error', (e) => Nimiq.Log.e(DumbPoolMiner, `WS error:`, e.message || e));
+        this._ws.on('error', (e) => Nimiq.Log.e(DumbPoolMiner, 'WS error:', e.message || e));
     }
 
     disconnect() {
