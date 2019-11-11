@@ -1,5 +1,6 @@
 const os = require('os');
 const fs = require('fs');
+const http = require('http');
 const JSON5 = require('json5');
 const pjson = require('./package.json');
 const Nimiq = require('@nimiq/core');
@@ -127,6 +128,27 @@ const argv = require('yargs')
         requiresArg: true,
         type: 'string'
     })
+    .option('api', {
+        description: 'IP and port for the miner API (127.0.0.1:3110)',
+        coerce: arg => {
+            arg = useFirst(arg);
+            if (arg.length === 0) {
+                arg = '127.0.0.1:3110';
+            }
+            const chunks = arg.split(':', 2);
+            if (chunks.length < 2) {
+                chunks.unshift('127.0.0.1');
+            }
+            const host = chunks[0];
+            const port = parseInt(chunks[1]);
+            if (Number.isNaN(port)) {
+                throw new Error(`Invalid API port: ${chunks[1]}`);
+            }
+            return { host, port };
+        },
+        requiresArg: false,
+        type: 'string'
+    })
     .option('memory', {
         description: 'Memory to allocate in Mb per thread/GPU',
         coerce: parseCSV,
@@ -194,7 +216,7 @@ const argv = require('yargs')
 Nimiq.Log.instance.level = argv.log;
 
 (async () => {
-    const { type, address, pool, mode, network, volatile, hashrate, difficulty, cpuPriority } = argv;
+    const { type, address, pool, mode, network, volatile, hashrate, difficulty, api, cpuPriority } = argv;
     const deviceName = argv.name || os.hostname();
     const extraData = argv.extraData ? `${argv.extraData} / ${deviceName}` : deviceName;
     const minerVersion = `NQ Miner ${pjson.version} ${type === 'cuda' ? 'CUDA' : 'OpenCL'}`;
@@ -206,6 +228,10 @@ Nimiq.Log.instance.level = argv.log;
     const startDifficulty = (difficulty > 0) ? difficulty : hashrateToDifficulty(hashrate > 0 ? hashrate : 100); // 100 kH/s by default
     const deviceData = { deviceName, startDifficulty, minerVersion, userAgent };
     const deviceOptions = Utils.getDeviceOptions(argv);
+
+    let deviceId;
+    let totalHashrate = 0, currentHashrates = [];
+    let balance, confirmedBalance, networkDifficulty;
 
     Nimiq.Log.i(TAG, `${minerVersion} starting`);
 
@@ -221,9 +247,49 @@ Nimiq.Log.instance.level = argv.log;
 
     $.nativeMiner = new NativeMiner(type, deviceOptions);
     $.nativeMiner.on('hashrate-changed', (hashrates) => {
-        const totalHashRate = hashrates.reduce((a, b) => a + b, 0);
-        Nimiq.Log.i(TAG, `Hashrate: ${Utils.humanHashrate(totalHashRate)} | ${hashrates.map((hr, idx) => `GPU${idx}: ${Utils.humanHashrate(hr)}`).filter(hr => hr).join(' | ')}`);
+        currentHashrates = hashrates;
+        totalHashrate = hashrates.reduce((a, b) => a + b, 0);
+        Nimiq.Log.i(TAG, `Hashrate: ${Utils.humanHashrate(totalHashrate)} | ${hashrates.map((hr, idx) => `GPU${idx}: ${Utils.humanHashrate(hr)}`).filter(hr => hr).join(' | ')}`);
     });
+
+    if (api) {
+        const server = http.createServer((req, res) => {
+            if (req.url !== '/api') {
+                res.writeHead(301, { 'Location': '/api' });
+                res.end();
+                return
+            }
+            res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({
+                mode,
+                network,
+                pool: (pool && mode !== 'solo' ? `${pool.host}:${pool.port}` : undefined),
+                wallet: address.toUserFriendlyAddress(),
+                balance,
+                confirmedBalance,
+                deviceName,
+                deviceId,
+                shares: ($.miner.numShares || 0),
+                errors: ($.miner.numErrors || 0),
+                totalHashrate,
+                hashrates: currentHashrates,
+                shareDifficulty: ($.miner.shareCompact ? Nimiq.BlockUtils.compactToDifficulty($.miner.shareCompact).toNumber() : undefined),
+                networkDifficulty: (networkDifficulty ? networkDifficulty.toNumber() : undefined),
+                networkHashrate: (networkDifficulty ? (2 ** 16 * networkDifficulty / Nimiq.Policy.BLOCK_TIME) : undefined),
+                devices: $.nativeMiner.devices.filter(device => device.enabled)
+                    .map((device, idx) => {
+                        return {
+                            idx,
+                            name: device.name
+                        };
+                    }),
+                uptime: Math.floor(process.uptime()),
+                version: minerVersion
+            }));
+        });
+        server.listen(api.port, api.host);
+        Nimiq.Log.i(TAG, `API server started on ${api.host}:${api.port}`);
+    }
 
     Nimiq.Log.i(TAG, `- address          = ${address.toUserFriendlyAddress()}`);
     Nimiq.Log.i(TAG, `- network          = ${network}`);
@@ -244,12 +310,21 @@ Nimiq.Log.instance.level = argv.log;
     Nimiq.GenesisConfig.init(Nimiq.GenesisConfig.CONFIGS[network]);
 
     if (mode === 'dumb') {
-        const deviceId = DumbPoolMiner.generateDeviceId();
+        deviceId = DumbPoolMiner.generateDeviceId();
         Nimiq.Log.i(TAG, `- device id        = ${deviceId}`);
 
         $.miner = new DumbPoolMiner($.nativeMiner, address, deviceId, deviceData);
         $.miner.on('share', nonce => {
             Nimiq.Log.i(TAG, `Found share. Nonce: ${nonce}`);
+        });
+        $.miner.on('balance', lunas => {
+            balance = Nimiq.Policy.lunasToCoins(lunas);
+        });
+        $.miner.on('confirmed-balance', lunas => {
+            confirmedBalance = Nimiq.Policy.lunasToCoins(lunas);
+        });
+        $.miner.on('new-block', blockHeader => {
+            networkDifficulty = blockHeader.difficulty;
         });
 
         Nimiq.Log.i(TAG, `Connecting to pool ${pool.host} using device id ${deviceId} as a ${mode} client.`);
@@ -280,7 +355,7 @@ Nimiq.Log.instance.level = argv.log;
     if (mode === 'solo') {
         $.miner = new Nimiq.Miner($.nativeMiner, $.blockchain, $.accounts, $.mempool, $.network.time, address, Nimiq.BufferUtils.fromAscii(extraData));
     } else {
-        const deviceId = Nimiq.BasePoolMiner.generateDeviceId(networkConfig);
+        deviceId = Nimiq.BasePoolMiner.generateDeviceId(networkConfig);
         Nimiq.Log.i(TAG, `- device id        = ${deviceId}`);
 
         if (mode === 'nano') {
@@ -291,6 +366,12 @@ Nimiq.Log.instance.level = argv.log;
 
         $.miner.on('share', (block) => {
             Nimiq.Log.i(TAG, `Found share. Nonce: ${block.header.nonce}`);
+        });
+        $.miner.on('balance', lunas => {
+            balance = Nimiq.Policy.lunasToCoins(lunas);
+        });
+        $.miner.on('confirmed-balance', lunas => {
+            confirmedBalance = Nimiq.Policy.lunasToCoins(lunas);
         });
 
         $.client.addConsensusChangedListener(async (state) => {
@@ -326,6 +407,11 @@ Nimiq.Log.instance.level = argv.log;
     $.client.addHeadChangedListener(async (hash, reason) => {
         const head = await $.client.getBlock(hash, false);
         Nimiq.Log.i(TAG, `Now at block: ${head.height} (${reason})`);
+        if (mode === 'solo') {
+            balance = Nimiq.Policy.lunasToCoins((await $.client.getAccount(address)).balance);
+            confirmedBalance = balance;
+        }
+        networkDifficulty = head.difficulty;
     });
 
     const isSeed = (peerAddress) => Nimiq.GenesisConfig.SEED_PEERS.some(seed => seed.equals(peerAddress));

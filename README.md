@@ -45,6 +45,10 @@
                    Possible values: "info", "debug", "verbose"
                    Default: "info"
 
+--api              Start API server on the specified host and port                          [string]
+                   Example: 3110 or 0.0.0.0:3110
+                   Default: 127.0.0.1:3110
+
 --memory           Memory to allocate in Mb per thread/GPU                                   [array]
                    Example: 3968 3968 2944 2944
                    Default: auto

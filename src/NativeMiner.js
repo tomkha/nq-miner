@@ -12,8 +12,8 @@ class NativeMiner extends Nimiq.Observable {
         const NimiqMiner = require('bindings')(`nimiq_miner_${type}.node`);
         this._nativeMiner = new NimiqMiner.Miner();
 
-        const devices = this._nativeMiner.getDevices();
-        devices.forEach((device, idx) => {
+        this._devices = this._nativeMiner.getDevices();
+        this._devices.forEach((device, idx) => {
             const options = deviceOptions.forDevice(idx);
             if (!options.enabled) {
                 device.enabled = false;
@@ -42,7 +42,7 @@ class NativeMiner extends Nimiq.Observable {
             }
         });
 
-        const threads = devices.reduce((threads, device) => threads + (device.enabled ? device.threads : 0), 4); // 4 initial threads + more for GPU workers
+        const threads = this._devices.reduce((threads, device) => threads + (device.enabled ? device.threads : 0), 4); // 4 initial threads + more for GPU workers
         process.env.UV_THREADPOOL_SIZE = threads;
         Nimiq.Log.d(NativeMiner, `Set UV_THREADPOOL_SIZE=${threads}`);
 
@@ -108,6 +108,10 @@ class NativeMiner extends Nimiq.Observable {
             clearInterval(this._hashRateTimer);
             delete this._hashRateTimer;
         }
+    }
+
+    get devices() {
+        return this._devices;
     }
 }
 

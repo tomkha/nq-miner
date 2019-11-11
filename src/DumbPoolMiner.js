@@ -18,6 +18,10 @@ class DumbPoolMiner extends Nimiq.Observable {
         this._address = address;
         this._deviceId = deviceId;
         this._deviceData = deviceData;
+
+        this._numShares = 0;
+        this._numErrors = 0;
+        this._shareCompact = undefined;
     }
 
     connect(host, port) {
@@ -92,6 +96,7 @@ class DumbPoolMiner extends Nimiq.Observable {
                 break;
             case 'error':
                 Nimiq.Log.w(DumbPoolMiner, `Pool error: ${msg.reason}`);
+                this._numErrors++;
                 break;
         }
     }
@@ -104,6 +109,7 @@ class DumbPoolMiner extends Nimiq.Observable {
                     message: 'share',
                     nonce: obj.nonce
                 });
+                this._numShares++;
                 this.fire('share', obj.nonce);
             }
         });
@@ -116,15 +122,19 @@ class DumbPoolMiner extends Nimiq.Observable {
     _onNewPoolSettings(address, extraData, shareCompact, nonce) {
         const difficulty = Nimiq.BlockUtils.compactToDifficulty(shareCompact);
         Nimiq.Log.i(DumbPoolMiner, `Set share difficulty: ${difficulty.toFixed(2)} (${shareCompact.toString(16)})`);
+        this._shareCompact = shareCompact;
         this._nativeMiner.setShareCompact(shareCompact);
     }
 
     _onBalance(balance, confirmedBalance) {
         Nimiq.Log.i(DumbPoolMiner, `Pool balance: ${Nimiq.Policy.lunasToCoins(balance)} NIM (confirmed ${Nimiq.Policy.lunasToCoins(confirmedBalance)} NIM)`);
+        this.fire('balance', balance);
+        this.fire('confirmed-balance', confirmedBalance);
     }
 
     _onNewBlock(blockHeader) {
         this._startMining(blockHeader);
+        this.fire('new-block', blockHeader);
     }
 
     _send(msg) {
@@ -135,6 +145,18 @@ class DumbPoolMiner extends Nimiq.Observable {
                 Nimiq.Log.w(DumbPoolMiner, 'Error sending:', e.message || e);
             }
         }
+    }
+
+    get numShares() {
+        return this._numShares;
+    }
+
+    get numErrors() {
+        return this._numErrors;
+    }
+
+    get shareCompact() {
+        return this._shareCompact;
     }
 
     static generateDeviceId() {
