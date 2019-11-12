@@ -8,7 +8,7 @@ CUSTOM_ADDRESS=`echo $CUSTOM_TEMPLATE | cut -d "." -f1`
 CUSTOM_WORKER_NAME=`echo $CUSTOM_TEMPLATE | cut -d "." -f2`
 
 # Creating miner.conf contents
-conf="--pool $CUSTOM_URL --address '$CUSTOM_ADDRESS' --name '$CUSTOM_WORKER_NAME' ${CUSTOM_USER_CONFIG}"
+conf="--pool $CUSTOM_URL --address '$CUSTOM_ADDRESS' --name '$CUSTOM_WORKER_NAME' --api ${CUSTOM_USER_CONFIG}"
 
 GPU_COUNT_NVIDIA=`gpu-detect NVIDIA`
 if [[ "$GPU_COUNT_NVIDIA" -gt "0" ]]
