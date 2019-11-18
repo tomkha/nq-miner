@@ -509,23 +509,24 @@ void Device::Initialize()
   {
     size_t freeMemory, totalMemory;
     cudaMemGetInfo(&freeMemory, &totalMemory);
-    memSize = freeMemory / threads;
+    memSize = (freeMemory - MEMORY_BLOCK_SIZE) / threads;
   }
 
+  memSize = (memSize / MEMORY_BLOCK_SIZE) * MEMORY_BLOCK_SIZE;
+
+  uint32_t threadsPerBlock = (MEMORY_BLOCK_SIZE / (sizeof(block_g) * NIMIQ_ARGON2_COST));
   uint32_t noncesPerRun = memSize / (sizeof(block_g) * NIMIQ_ARGON2_COST);
-  noncesPerRun = (noncesPerRun / BLAKE2B_THREADS_PER_BLOCK) * BLAKE2B_THREADS_PER_BLOCK;
-  memSize = sizeof(block_g) * NIMIQ_ARGON2_COST * noncesPerRun;
 
   worker.nonces_per_run = noncesPerRun;
 
-  worker.init_memory_blocks = dim3(noncesPerRun / BLAKE2B_THREADS_PER_BLOCK);
-  worker.init_memory_threads = dim3(BLAKE2B_THREADS_PER_BLOCK, 2);
+  worker.init_memory_blocks = dim3(noncesPerRun / threadsPerBlock);
+  worker.init_memory_threads = dim3(threadsPerBlock, 2);
 
   worker.argon2_blocks = dim3(1, noncesPerRun);
   worker.argon2_threads = dim3(THREADS_PER_LANE, 1);
 
-  worker.get_nonce_blocks = dim3(noncesPerRun / BLAKE2B_THREADS_PER_BLOCK);
-  worker.get_nonce_threads = dim3(BLAKE2B_THREADS_PER_BLOCK);
+  worker.get_nonce_blocks = dim3(noncesPerRun / threadsPerBlock);
+  worker.get_nonce_threads = dim3(threadsPerBlock);
 
   worker.cacheSize = cache;
   worker.memoryTradeoff = memoryTradeoff;
