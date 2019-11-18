@@ -248,7 +248,7 @@ Nimiq.Log.instance.level = argv.log;
     $.nativeMiner = new NativeMiner(type, deviceOptions);
     $.nativeMiner.on('hashrate-changed', (hashrates) => {
         currentHashrates = hashrates;
-        totalHashrate = hashrates.reduce((a, b) => a + b, 0);
+        totalHashrate = hashrates.reduce((a, v) => a + (v || 0), 0);
         Nimiq.Log.i(TAG, `Hashrate: ${Utils.humanHashrate(totalHashrate)} | ${hashrates.map((hr, idx) => `GPU${idx}: ${Utils.humanHashrate(hr)}`).filter(hr => hr).join(' | ')}`);
     });
 
@@ -257,9 +257,9 @@ Nimiq.Log.instance.level = argv.log;
             if (req.url !== '/api') {
                 res.writeHead(301, { 'Location': '/api' });
                 res.end();
-                return
+                return;
             }
-            res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({
                 mode,
                 network,
@@ -272,14 +272,15 @@ Nimiq.Log.instance.level = argv.log;
                 shares: ($.miner.numShares || 0),
                 errors: ($.miner.numErrors || 0),
                 totalHashrate,
-                hashrates: currentHashrates,
+                hashrates: $.nativeMiner.devices.map((device, idx) => device.enabled ? (currentHashrates[idx] || 0) : 0),
                 shareDifficulty: ($.miner.shareCompact ? Nimiq.BlockUtils.compactToDifficulty($.miner.shareCompact).toNumber() : undefined),
                 networkDifficulty: (networkDifficulty ? networkDifficulty.toNumber() : undefined),
                 networkHashrate: (networkDifficulty ? (2 ** 16 * networkDifficulty / Nimiq.Policy.BLOCK_TIME) : undefined),
-                devices: $.nativeMiner.devices.filter(device => device.enabled)
+                devices: $.nativeMiner.devices
                     .map((device, idx) => {
                         return {
                             idx,
+                            enabled: device.enabled,
                             name: device.name
                         };
                     }),
