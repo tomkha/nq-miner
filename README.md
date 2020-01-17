@@ -77,3 +77,7 @@
 
 -h, --help         Show help                                                               [boolean]
 ```
+
+## Donate
+
+[![Buy me coffee](https://www.nimiq.com/accept-donations/img/donationBtnImg/gold-small.svg)](https://safe.nimiq.com/#_request/NQ799C0ATL8GX3VYY3RTT0S14JP4NVFG7BEC/5000_)
