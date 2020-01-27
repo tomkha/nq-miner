@@ -5,7 +5,7 @@ const JSON5 = require('json5');
 const pjson = require('./package.json');
 const Nimiq = require('@nimiq/core');
 const DumbPoolMiner = require('./src/DumbPoolMiner');
-const NativeMiner = require('./src/NativeMiner')
+const NativeMiner = require('./src/NativeMiner');
 const Utils = require('./src/Utils');
 
 const TAG = 'NQMiner';
@@ -375,7 +375,7 @@ Nimiq.Log.instance.level = argv.log;
             confirmedBalance = Nimiq.Policy.lunasToCoins(lunas);
         });
 
-        $.client.addConsensusChangedListener(async (state) => {
+        $.client.addConsensusChangedListener((state) => {
             if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
                 if ($.miner.isDisconnected()) {
                     Nimiq.Log.i(TAG, `Connecting to pool ${pool.host} using device id ${deviceId} as a ${mode} client.`);
@@ -386,7 +386,7 @@ Nimiq.Log.instance.level = argv.log;
     }
 
     let consensusState = Nimiq.Client.ConsensusState.CONNECTING;
-    $.client.addConsensusChangedListener(async (state) => {
+    $.client.addConsensusChangedListener((state) => {
         consensusState = state;
         if (state === Nimiq.Client.ConsensusState.ESTABLISHED) {
             $.miner.startWork();

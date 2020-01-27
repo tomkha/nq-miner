@@ -42,7 +42,7 @@ class DumbPoolMiner extends Nimiq.Observable {
 
         this._ws.on('ping', hearbeat);
 
-        this._ws.on('close', (code, reason) => {
+        this._ws.on('close', () => {
             this._stopMining();
             clearTimeout(this._pingTimeout);
 
