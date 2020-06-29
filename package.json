@@ -19,6 +19,7 @@
     "@nimiq/core": "https://github.com/tomkha/nimiq-core#mat/nq-miner",
     "bindings": "^1.5.0",
     "nan": "^2.14.0",
+    "node-lmdb": "https://github.com/tomkha/node-lmdb#win_delay_load_hook",
     "yargs": "^14.2.0"
   },
   "devDependencies": {
