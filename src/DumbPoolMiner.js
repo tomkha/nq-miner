@@ -73,6 +73,7 @@ class DumbPoolMiner extends Nimiq.Observable {
             deviceId: this._deviceId,
             deviceName: this._deviceData ? this._deviceData.deviceName : undefined,
             startDifficulty: this._deviceData ? this._deviceData.startDifficulty : undefined,
+            pass: this._deviceData ? this._deviceData.poolParams : undefined,
             minerVersion: this._deviceData ? this._deviceData.minerVersion : undefined,
             deviceData: this._deviceData,
             genesisHash: Nimiq.GenesisConfig.GENESIS_HASH.toBase64()

@@ -41,6 +41,8 @@
                    Either hashrate or difficulty can be specificied
                    Example: 30
 
+--pool-params      Extra parameters to pass to the pool (dumb mode)                         [string]
+
 --log              Log level                                                                [string]
                    Possible values: "info", "debug", "verbose"
                    Default: "info"

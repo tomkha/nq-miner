@@ -120,6 +120,12 @@ const argv = require('yargs')
         requiresArg: true,
         type: 'number'
     })
+    .option('pool-params', {
+        description: 'Extra parameters to pass to the pool (dumb mode)',
+        coerce: useFirst,
+        requiresArg: true,
+        type: 'string'
+    })
     .option('log', {
         description: 'Log level',
         choices: ['info', 'debug', 'verbose'],
@@ -226,7 +232,8 @@ Nimiq.Log.instance.level = argv.log;
         return (1e3 * hashrate * desiredSps) / (1 << 16);
     };
     const startDifficulty = (difficulty > 0) ? difficulty : hashrateToDifficulty(hashrate > 0 ? hashrate : 100); // 100 kH/s by default
-    const deviceData = { deviceName, startDifficulty, minerVersion, userAgent };
+    const poolParams = argv.poolParams;
+    const deviceData = { deviceName, startDifficulty, poolParams, minerVersion, userAgent };
     const deviceOptions = Utils.getDeviceOptions(argv);
 
     let deviceId;
