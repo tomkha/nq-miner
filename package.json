@@ -18,12 +18,12 @@
   "dependencies": {
     "@nimiq/core": "https://github.com/tomkha/nimiq-core#mat/nq-miner",
     "bindings": "^1.5.0",
-    "nan": "^2.14.0",
+    "nan": "^2.16.0",
     "node-lmdb": "https://github.com/tomkha/node-lmdb#win_delay_load_hook",
-    "yargs": "^14.2.0"
+    "yargs": "^17.5.1"
   },
   "devDependencies": {
-    "node-gyp": "^5.0.4"
+    "node-gyp": "^9.0.0"
   },
   "resolutions": {
     "node-lmdb": "https://github.com/tomkha/node-lmdb#win_delay_load_hook"

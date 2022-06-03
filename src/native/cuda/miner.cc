@@ -207,7 +207,7 @@ NAN_METHOD(Miner::GetDevices)
     Nan::SetAccessor(device, Nan::New("threads").ToLocalChecked(), Device::HandleGetters, Device::HandleSetters);
     Nan::SetAccessor(device, Nan::New("cache").ToLocalChecked(), Device::HandleGetters, Device::HandleSetters);
     Nan::SetAccessor(device, Nan::New("memoryTradeoff").ToLocalChecked(), Device::HandleGetters, Device::HandleSetters);
-    devices->Set(deviceIndex, device);
+    Nan::Set(devices, deviceIndex, device);
   }
   info.GetReturnValue().Set(devices);
 }
